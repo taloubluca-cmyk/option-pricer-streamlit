@@ -168,6 +168,7 @@ st.markdown("### Options")
 n = st.number_input("Nombre d'options", min_value=1, max_value=20, value=2, step=1)
 
 options = []
+# --- dans la boucle des options ---
 for i in range(int(n)):
     with st.expander(f"Option #{i+1}", expanded=(i == 0)):
         c1, c2, c3, c4 = st.columns(4)
@@ -178,10 +179,13 @@ for i in range(int(n)):
 
         c5, c6, c7 = st.columns(3)
         K = c5.number_input("Strike K", value=5000.0, step=50.0, key=f"K_{i}")
-        T = c6.number_input("Maturité T (années)", value=0.5, step=0.05, format="%.6f", key=f"T_{i}")
+        # --- MODIF: T en jours ---
+        T_days = c6.number_input("Maturité T (jours)", value=180, step=5, key=f"Tdays_{i}")
+        T = T_days / 365.0  # conversion en années
         r_i = c7.number_input("Taux sans risque r (override)", value=r_global, step=0.005, format="%.6f", key=f"r_{i}")
 
         options.append({"type": tp, "side": side, "qty": qty, "K": K, "t": t_now, "T": T, "r": r_i, "sigma": sigma})
+
 
 # =========================
 # Grille de Ft
@@ -219,52 +223,55 @@ st.dataframe(df_port.style.format({m: "{:.6f}" for m in metrics}), use_container
 # Courbe unique: soit Price/Greek, soit Payoff
 # =========================
 def plot_selected_curve(metric_name):
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    # 1. Graphique des options individuelles
+    fig_opts = go.Figure()
     y_port = np.zeros_like(Ft_grid)
 
     if metric_name == "Payoff":
-        # Courbe de payoff pur à maturité
-        x_vals = Ft_grid  # FT à maturité sur la même grille
+        x_vals = Ft_grid
         for i, opt in enumerate(options, start=1):
             y = signed(payoff_at_maturity(opt, x_vals), opt["side"], opt["qty"])
             y_port += y
-            fig.add_trace(
-                go.Scatter(x=x_vals, y=y, mode="lines", name=f"Opt #{i} ({opt['side']} {opt['type']})"),
-                secondary_y=False
-            )
-        y_label_left = "Payoff (signé × qty)"
-        y_label_right = "Portfolio (signé × qty)"
+            fig_opts.add_trace(go.Scatter(x=x_vals, y=y, mode="lines",
+                                          name=f"Opt #{i} ({opt['side']} {opt['type']})"))
+        y_label = "Payoff (signé × qty)"
         x_label = "FT à maturité"
     else:
-        # Price / Greeks
         x_vals = Ft_grid
         for i, opt in enumerate(options, start=1):
             y = np.array([signed(greek_value(opt, Ft, metric_name), opt["side"], opt["qty"]) for Ft in x_vals])
             y_port += y
-            fig.add_trace(
-                go.Scatter(x=x_vals, y=y, mode="lines", name=f"Opt #{i} ({opt['side']} {opt['type']})"),
-                secondary_y=False
-            )
-        y_label_left = f"{metric_name} (signé × qty)"
-        y_label_right = "Portfolio (signé × qty)"
+            fig_opts.add_trace(go.Scatter(x=x_vals, y=y, mode="lines",
+                                          name=f"Opt #{i} ({opt['side']} {opt['type']})"))
+        y_label = f"{metric_name} (signé × qty)"
         x_label = "Ft"
 
-    # Trace portefeuille (axe secondaire)
-    fig.add_trace(
-        go.Scatter(x=x_vals, y=y_port, mode="lines", name="Portfolio (signé)", line=dict(width=3)),
-        secondary_y=True
-    )
-
-    fig.update_layout(
-        margin=dict(l=10, r=10, t=10, b=10),
+    fig_opts.update_layout(
+        title="Options individuelles",
+        margin=dict(l=10, r=10, t=30, b=10),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         hovermode="x unified"
     )
-    fig.update_xaxes(title_text=x_label)
-    fig.update_yaxes(title_text=y_label_left, secondary_y=False)
-    fig.update_yaxes(title_text=y_label_right, secondary_y=True)
+    fig_opts.update_xaxes(title_text=x_label)
+    fig_opts.update_yaxes(title_text=y_label)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig_opts, use_container_width=True)
+
+    # 2. Graphique du portefeuille
+    fig_port = go.Figure()
+    fig_port.add_trace(go.Scatter(x=x_vals, y=y_port, mode="lines",
+                                  name="Portfolio (signé)", line=dict(width=3)))
+    fig_port.update_layout(
+        title="Portefeuille",
+        margin=dict(l=10, r=10, t=30, b=10),
+        hovermode="x unified"
+    )
+    fig_port.update_xaxes(title_text=x_label)
+    fig_port.update_yaxes(title_text="Portfolio (signé × qty)")
+
+    st.plotly_chart(fig_port, use_container_width=True)
+
 
 st.markdown("### Courbe")
 plot_selected_curve(metric)
+
