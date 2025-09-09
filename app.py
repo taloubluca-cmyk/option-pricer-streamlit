@@ -222,11 +222,11 @@ st.dataframe(df_port.style.format({m: "{:.6f}" for m in metrics}), use_container
 # =========================
 # Courbe unique: soit Price/Greek, soit Payoff
 # =========================
-def plot_selected_curve(metric_name, spot_value=None):
+def plot_selected_curve(metric_name):
     """
     Trace les courbes individuelles des options ainsi que la courbe du portefeuille,
     selon le metric choisi (Payoff ou Greek).
-    Ajoute une ligne verticale rouge pour représenter le spot choisi.
+    Ajoute une ligne verticale rouge en x = Ft0 (spot choisi par l'utilisateur).
     """
 
     # Initialisation de la figure avec un double axe Y
@@ -298,15 +298,14 @@ def plot_selected_curve(metric_name, spot_value=None):
         secondary_y=True
     )
 
-    # --- Ligne verticale rouge (spot choisi par l'utilisateur) ---
-    if spot_value is not None:
-        fig.add_vline(
-            x=spot_value,
-            line=dict(color="red", width=2, dash="dash"),
-            annotation_text=f"Spot = {spot_value}",
-            annotation_position="top left",
-            annotation_font=dict(color="red")
-        )
+    # --- Ligne verticale rouge (spot Ft0) ---
+    fig.add_vline(
+        x=Ft0,
+        line=dict(color="red", width=2, dash="dash"),
+        annotation_text=f"Spot = {Ft0}",
+        annotation_position="top left",
+        annotation_font=dict(color="red")
+    )
 
     # --- Mise en forme du graphe ---
     fig.update_layout(
@@ -331,8 +330,10 @@ def plot_selected_curve(metric_name, spot_value=None):
 
 
 
+
 st.markdown("### Courbe")
 plot_selected_curve(metric)
+
 
 
 
