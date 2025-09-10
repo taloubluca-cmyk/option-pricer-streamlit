@@ -230,7 +230,7 @@ def plot_selected_curve(metric_name):
     """
 
     # Initialisation de la figure avec un double axe Y
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig = make_subplots(specs=[[{"secondary_y": False}]])
     y_port = np.zeros_like(Ft_grid)
 
     # --- Cas 1 : Payoff pur à maturité ---
@@ -333,6 +333,7 @@ def plot_selected_curve(metric_name):
 
 st.markdown("### Courbe")
 plot_selected_curve(metric)
+
 
 
 
