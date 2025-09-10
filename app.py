@@ -295,7 +295,7 @@ def plot_selected_curve(metric_name):
             name="Portfolio (signé)",
             line=dict(width=3)
         ),
-        secondary_y=True
+        secondary_y=False
     )
 
     # --- Ligne verticale rouge (spot Ft0) ---
@@ -322,7 +322,7 @@ def plot_selected_curve(metric_name):
 
     fig.update_xaxes(title_text=x_label)
     fig.update_yaxes(title_text=y_label_left, secondary_y=False)
-    fig.update_yaxes(title_text="Portfolio (signé × qty)", secondary_y=True)
+    fig.update_yaxes(title_text="Portfolio (signé × qty)", secondary_y=False)
 
     # --- Affichage dans Streamlit ---
     st.plotly_chart(fig, use_container_width=True)
@@ -333,6 +333,7 @@ def plot_selected_curve(metric_name):
 
 st.markdown("### Courbe")
 plot_selected_curve(metric)
+
 
 
 
